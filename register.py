@@ -6,6 +6,8 @@ import sqlite3
 from sklearn.svm import SVC
 import os
 import time
+from augmentation import augment
+from train import train_model
 
 
 # Initialize MediaPipe
@@ -124,35 +126,13 @@ def main():
 # -------------------- Image Augmentation and Dataset Formation -----------------------
     if st.button("Process Video", key="process_botton"):
         # video data augmentation part --------
+        augment()
         print("frame data augmentation")
 
 
 # -------------------- Model Training --------------------------------------
     if st.button("Register", key="register_botton"):
-        # ---------------- Extract facial landmarks ----------------------
-        with mp_face_mesh.FaceMesh() as face_mesh:
-            landmarks = []
-            for frame in frames:
-                results = face_mesh.process(frame)
-                if results.multi_face_landmarks:
-                    for landmark in results.multi_face_landmarks[0].landmark:
-                        landmarks.extend([landmark.x, landmark.y, landmark.z])
-
-        # --------------- Train SVC model ---------------------------------
-        if id_input and name_input and landmarks:
-            conn = sqlite3.connect(DB_PATH)
-            cursor = conn.cursor()
-
-            # Add or update attendance record in database
-            cursor.execute("INSERT OR REPLACE INTO attendance (ID, Name, Attendance) VALUES (?, ?, ?)",
-                           (id_input, name_input, "Absent"))
-            conn.commit()
-            conn.close()
-
-            # Train SVC model
-            X_train = [landmarks]
-            y_train = [name_input]
-            model.fit(X_train, y_train)
+        train_model()
 
     # ------------------------- Display attendance records -------------------
     conn = sqlite3.connect(DB_PATH)
